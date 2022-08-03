@@ -12,6 +12,11 @@ class ContentModel: NSObject, CLLocationManagerDelegate, ObservableObject {
     
     var locationManager = CLLocationManager()
     
+    @Published var authorizationState = CLAuthorizationStatus.notDetermined
+    
+    @Published var restaurants = [Business]()
+    @Published var sights = [Business]()
+    
     override init() {
         
         // Initilize NSObject
@@ -30,6 +35,10 @@ class ContentModel: NSObject, CLLocationManagerDelegate, ObservableObject {
     
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         
+        // Update authorizationState
+        authorizationState = locationManager.authorizationStatus
+        
+        // Check user's authorization status
         if locationManager.authorizationStatus ==  .authorizedAlways ||
             locationManager.authorizationStatus == .authorizedWhenInUse {
             // Permission granted
@@ -45,7 +54,6 @@ class ContentModel: NSObject, CLLocationManagerDelegate, ObservableObject {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         
         // Get location of user
-        print(locations.first ?? "no locations")
         let userLocation = locations.first
         
         if userLocation != nil {
@@ -54,8 +62,8 @@ class ContentModel: NSObject, CLLocationManagerDelegate, ObservableObject {
             locationManager.stopUpdatingLocation()
             
             // Send coordinates of user to Yelp API
-            //getBusinesses(category: "arts", location: userLocation!)
             getBusinesses(category: "restaurants", location: userLocation!)
+            getBusinesses(category: "arts", location: userLocation!)
         }
     }
     
@@ -66,7 +74,7 @@ class ContentModel: NSObject, CLLocationManagerDelegate, ObservableObject {
         // Create URL
 //        let urlString = "https://api.yelp.com/v3/businesses/search?latitude=\(location.coordinate.latitude)&longitude=\(location.coordinate.longitude)&categories=\(category)&limit=6"
         
-        var urlComponents = URLComponents(string: "https://api.yelp.com/v3/businesses/search")
+        var urlComponents = URLComponents(string: Constants.endpointURL)
         urlComponents?.queryItems = [
             URLQueryItem(name: "latitude", value: String(location.coordinate.latitude)),
             URLQueryItem(name: "longitude", value: String(location.coordinate.longitude)),
@@ -80,8 +88,8 @@ class ContentModel: NSObject, CLLocationManagerDelegate, ObservableObject {
             var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10.0)
             
             // Customize request with authorization code
-            request.httpMethod = "GET"
-            request.addValue("Bearer API KEY", forHTTPHeaderField: "Authorization")
+            request.httpMethod = Constants.httpMethod
+            request.addValue("Bearer \(Constants.key)", forHTTPHeaderField: "Authorization")
             
             // Get URLSession
             let session = URLSession.shared
@@ -91,11 +99,28 @@ class ContentModel: NSObject, CLLocationManagerDelegate, ObservableObject {
                 
                 // Check there isn't an error
                 guard error == nil else {
-                    print(response)
+                    
                     return
                 }
                 
+                // Decode data
+                let decoder = JSONDecoder()
                 
+                do {
+                    let result = try decoder.decode(BusinessSearch.self, from: data!)
+                    
+                    DispatchQueue.main.async {
+                        if category == "restaurants" {
+                            self.restaurants = result.businesses
+                        }
+                        else if category == "arts" {
+                            self.sights = result.businesses
+                        }
+                    }
+                }
+                catch {
+                    print(error)
+                }
             }
             
             // Start DataTask

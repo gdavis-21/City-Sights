@@ -6,11 +6,30 @@
 //
 
 import SwiftUI
+import CoreLocation
 
 struct LaunchView: View {
+    
+    @EnvironmentObject var model: ContentModel
+    
     var body: some View {
-        Text("Hello, world!")
-            .padding()
+        
+        // Detect user's authorization status
+        if model.authorizationState == .notDetermined {
+            // Show OnboardingView
+        }
+        else if model.authorizationState == .authorizedWhenInUse || model.authorizationState == .authorizedAlways {
+            // Show HomeView
+            HomeView()
+        }
+        
+        // If undetermined, show Onboarding
+        
+        // If approved, show HomeView
+        
+        // If denied, show ErrorView
+        
+        
     }
 }
 

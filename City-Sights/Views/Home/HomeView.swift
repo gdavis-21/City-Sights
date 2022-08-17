@@ -15,34 +15,45 @@ struct HomeView: View {
     
     var body: some View {
         
-        // If no restaurants or sights in ContentModel
-        if model.restaurants.count == 0 && model.sights.count == 0 {
-            // Waiting on data
-            ProgressView()
-        }
-        else {
-            
-            // Determine if to show ListView or MapView
-            if isMapShowing {
-                // TODO: Show MapView
-                
+        NavigationView {
+        
+            // If no restaurants or sights in ContentModel
+            if model.restaurants.count == 0 && model.sights.count == 0 {
+                // Waiting on data
+                ProgressView()
             }
             else {
-                // Show ListView
-                VStack(alignment: .leading) {
-                    HStack {
-                        Image(systemName: "location")
-                        Text("San Francisco")
-                        Spacer()
-                        Text("Switch to Map View")
-                    }
-                    Divider()
-                    
-                    BusinessList()
-                }
                 
+                // Determine if to show ListView or MapView
+                if isMapShowing {
+                    // TODO: Show MapView
+                    BusinessMap()
+                        .ignoresSafeArea()
+                }
+                else {
+                    // Show ListView
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Image(systemName: "location")
+                            Text("San Francisco")
+                            Spacer()
+                            Button(action: {
+                                isMapShowing = true
+                            }, label: {
+                                Text("Switch to Map View")
+                            })
+                        }
+                        Divider()
+                        
+                        BusinessList()
+                    }
+                    .padding(.top)
+                        .navigationBarHidden(true)
+                    
+                }
             }
         }
+        .tint(.black)
     }
 }
 

@@ -109,6 +109,11 @@ class ContentModel: NSObject, CLLocationManagerDelegate, ObservableObject {
                 do {
                     let result = try decoder.decode(BusinessSearch.self, from: data!)
                     
+                    // Call getImageData() for each business
+                    for business in result.businesses {
+                        business.getImageData()
+                    }
+                    
                     DispatchQueue.main.async {
                         if category == "restaurants" {
                             self.restaurants = result.businesses
